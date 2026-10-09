@@ -1,15 +1,13 @@
 """Qualità della scheda Google Maps (Google Business Profile): foto, orari, recensioni, contatti.
 
-Una chiamata "Place Details" per attività. Con le recensioni nella richiesta Google la conta come
-"Enterprise + Atmosphere": 25 $ ogni 1.000, ma le prime 1.000 di ogni mese sono gratuite.
+Una chiamata "Place Details" per attività, che Google conta come "Enterprise" (orari, voto, sito):
+20 $ ogni 1.000, ma le prime 1.000 di ogni mese sono gratuite.
 """
-
-import datetime as dt
 
 import requests
 
 URL = "https://places.googleapis.com/v1/places/{}"
-CAMPI = "photos,regularOpeningHours,reviews,rating,userRatingCount,websiteUri,nationalPhoneNumber"
+CAMPI = "photos,regularOpeningHours,rating,userRatingCount,websiteUri,nationalPhoneNumber"
 
 
 def scarica(gm, google_id: str) -> dict | None:
@@ -24,9 +22,8 @@ def scarica(gm, google_id: str) -> dict | None:
     return r.json()
 
 
-def valuta(d: dict, oggi: dt.date | None = None) -> tuple[int, list[str]]:
+def valuta(d: dict) -> tuple[int, list[str]]:
     """Voto 0-10 della scheda (10 = curata) e i difetti, scritti per il titolare."""
-    oggi = oggi or dt.date.today()
     voto, difetti = 0, []
 
     foto = len(d.get("photos") or [])  # Google ne elenca al massimo 10
@@ -41,7 +38,7 @@ def valuta(d: dict, oggi: dt.date | None = None) -> tuple[int, list[str]]:
         difetti.append("Sulla scheda Google non c'è nessuna foto")
 
     if d.get("regularOpeningHours"):
-        voto += 2
+        voto += 3
     else:
         difetti.append("Gli orari di apertura non sono indicati su Google")
 
@@ -52,14 +49,8 @@ def valuta(d: dict, oggi: dt.date | None = None) -> tuple[int, list[str]]:
         voto += 1
     else:
         difetti.append(f"Poche recensioni su Google ({recensioni})")
-
-    date = [r.get("publishTime", "")[:10] for r in d.get("reviews") or [] if r.get("publishTime")]
-    if date:
-        mesi = (oggi - dt.date.fromisoformat(max(date))).days // 30
-        if mesi <= 6:
-            voto += 1
-        else:
-            difetti.append(f"L'ultima recensione è di {mesi} mesi fa")
+    # Niente controllo sulla data delle recensioni: Google restituisce le 5 "più pertinenti", non le più
+    # recenti, quindi "l'ultima recensione è di N mesi fa" potrebbe essere falso.
 
     if d.get("nationalPhoneNumber"):
         voto += 1

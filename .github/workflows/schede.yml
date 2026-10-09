@@ -8,7 +8,7 @@ on:
         description: "Zona già analizzata (es. SS)"
         required: true
       quante:
-        description: "Tetto di chiamate a Google (le prime 1.000 al mese sono gratuite, poi 25 $ ogni 1.000)"
+        description: "Tetto di chiamate a Google (le prime 1.000 al mese sono gratuite, poi 20 $ ogni 1.000)"
         required: false
         default: "300"
       priorita_minima:
