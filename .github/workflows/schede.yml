@@ -1,0 +1,61 @@
+name: Controlla schede Google
+
+on:
+  # Avvio manuale: voto alla scheda Google Maps dei contatti migliori (foto, orari, recensioni, contatti)
+  workflow_dispatch:
+    inputs:
+      zona:
+        description: "Zona già analizzata (es. SS)"
+        required: true
+      quante:
+        description: "Tetto di chiamate a Google (le prime 1.000 al mese sono gratuite, poi 25 $ ogni 1.000)"
+        required: false
+        default: "300"
+      priorita_minima:
+        description: "Solo i contatti con priorità almeno di"
+        required: false
+        default: "55"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cerca
+  cancel-in-progress: false
+
+jobs:
+  schede:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # I dati stanno nel progetto privato: si scaricano in ./privato con il codice di accesso DATI_TOKEN
+      - uses: actions/checkout@v4
+        with:
+          repository: jacklamone/intellecta-lead-finder
+          token: ${{ secrets.DATI_TOKEN }}
+          path: privato
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installa
+        run: pip install -r requirements.txt
+
+      - name: Collega i dati del progetto privato
+        run: .github/collega_dati.sh
+
+      - name: Controlla le schede
+        env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          ZONA: ${{ inputs.zona }}
+          QUANTE: ${{ inputs.quante }}
+          MINIMA: ${{ inputs.priorita_minima }}
+        run: .github/esegui.sh python controlla_schede.py --zona "$ZONA" --max "$QUANTE" --min "$MINIMA"
+
+      - name: Salva i risultati
+        if: always()
+        run: .github/salva_dati.sh "Schede Google"

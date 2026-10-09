@@ -57,6 +57,8 @@ COLONNE_NUOVE = {
     "google_verificato": "TEXT", "fonte": "TEXT DEFAULT 'osm'",
     # Lettere: pagina personale, indirizzo postale completo, chi non vuole essere contattato
     "pagina": "TEXT", "indirizzo_postale": "TEXT", "lettera_preparata": "TEXT", "non_contattare": "INTEGER DEFAULT 0",
+    # Scheda Google Maps: voto 0-10 (10 = curata), difetti in chiaro, data del controllo
+    "scheda_voto": "INTEGER", "scheda_difetti": "TEXT", "scheda_controllata": "TEXT",
 }
 
 # Campi dell'analisi da azzerare quando il sito cambia indirizzo e va rianalizzato.
