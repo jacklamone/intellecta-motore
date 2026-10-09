@@ -39,6 +39,7 @@ on:
 
 permissions:
   contents: read
+  actions: write   # solo per tenere acceso il giro automatico (vedi l'ultimo passo)
 
 concurrency:
   group: cerca
@@ -98,3 +99,11 @@ jobs:
       - name: Salva i risultati
         if: always()
         run: .github/salva_dati.sh "Risultati ricerca"
+
+      # GitHub spegne i giri programmati dei progetti pubblici fermi da 60 giorni: qui i risultati vanno nel
+      # progetto privato, quindi a ogni giro si conferma che quello automatico deve restare acceso.
+      - name: Tieni acceso il giro automatico
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/cerca.yml/enable" >/dev/null && echo "Giro automatico confermato"
