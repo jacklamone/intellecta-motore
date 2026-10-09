@@ -1,0 +1,100 @@
+name: Cerca siti da rifare
+
+on:
+  # Avvio manuale: GitHub → Actions → "Cerca siti da rifare" → Run workflow
+  workflow_dispatch:
+    inputs:
+      zona:
+        description: "Zona: sigla provincia (es. PD), oppure comune:Nome (es. comune:Abano Terme). Vuoto = prossima della coda"
+        required: false
+        default: ""
+      max_siti:
+        description: "Quanti siti analizzare in questo giro"
+        required: false
+        default: "500"
+      max_ai:
+        description: "Tetto di valutazioni AI (controllo costi)"
+        required: false
+        default: "500"
+      max_google:
+        description: "Tetto di chiamate a Google Maps (controllo costi; 0 = non usarlo)"
+        required: false
+        default: "0"
+      scopri_google:
+        description: "Cerca su Google anche le attività che mancano su OpenStreetMap (costa ~20 $ a provincia)"
+        type: boolean
+        required: false
+        default: false
+      griglia:
+        description: "Ricerca Google: zona divisa in N×N riquadri (2 = normale, 4-5 = fitta per province grandi)"
+        required: false
+        default: "2"
+      max_proposte:
+        description: "Anteprime del sito rifatto da creare subito (si possono fare dopo con 'Crea anteprime')"
+        required: false
+        default: "0"
+  # Automatico: ogni mattina (~7:13 ora italiana) la prossima zona della coda; a coda finita, gli aggiornamenti
+  schedule:
+    - cron: "13 5 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cerca
+  cancel-in-progress: false
+
+jobs:
+  cerca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      # I dati stanno nel progetto privato: si scaricano in ./privato con il codice di accesso DATI_TOKEN
+      - uses: actions/checkout@v4
+        with:
+          repository: jacklamone/intellecta-lead-finder
+          token: ${{ secrets.DATI_TOKEN }}
+          path: privato
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installa
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Collega i dati del progetto privato
+        run: .github/collega_dati.sh
+
+      - name: Cerca
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          OPENAI_MODEL_PROPOSTE: ${{ vars.OPENAI_MODEL_PROPOSTE }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          MAX_GOOGLE: ${{ inputs.max_google || '0' }}
+          SCOPRI: ${{ inputs.scopri_google && '--scopri-google' || '' }}
+          MAX_PROPOSTE: ${{ inputs.max_proposte || '0' }}
+          GRIGLIA: ${{ inputs.griglia || '2' }}
+          DRIVE_UPLOAD_URL: ${{ secrets.DRIVE_UPLOAD_URL }}
+          DRIVE_TOKEN: ${{ secrets.DRIVE_TOKEN }}
+          ZONA: ${{ inputs.zona }}
+          MAX_SITI: ${{ inputs.max_siti || '500' }}
+          MAX_AI: ${{ inputs.max_ai || '500' }}
+        run: |
+          [ -z "$OPENAI_MODEL" ] && unset OPENAI_MODEL
+          [ -z "$OPENAI_MODEL_PROPOSTE" ] && unset OPENAI_MODEL_PROPOSTE
+          if [ -n "$ZONA" ]; then
+            .github/esegui.sh python cerca.py --zona "$ZONA" --max-siti "$MAX_SITI" --max-ai "$MAX_AI" --max-google "$MAX_GOOGLE" --max-proposte "$MAX_PROPOSTE" --griglia "$GRIGLIA" $SCOPRI
+          else
+            .github/esegui.sh python cerca.py --dalla-coda --max-siti "$MAX_SITI" --max-ai "$MAX_AI" --max-google "$MAX_GOOGLE" --max-proposte "$MAX_PROPOSTE" --griglia "$GRIGLIA" $SCOPRI
+          fi
+
+      - name: Salva i risultati
+        if: always()
+        run: .github/salva_dati.sh "Risultati ricerca"

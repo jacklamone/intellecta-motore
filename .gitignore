@@ -1,0 +1,9 @@
+# I dati stanno nel progetto privato jacklamone/intellecta-lead-finder (collegati qui durante i giri)
+privato/
+dati
+report
+pagine
+cruscotto
+lettere_config.json
+__pycache__/
+.venv/

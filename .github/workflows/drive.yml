@@ -1,0 +1,54 @@
+name: Copia su Google Drive
+
+on:
+  # Avvio manuale: copia su Drive i report già fatti (i giri nuovi si copiano da soli)
+  workflow_dispatch:
+    inputs:
+      zona:
+        description: "Sigla della zona (es. CR). Vuoto = tutte"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: drive
+  cancel-in-progress: false
+
+jobs:
+  drive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      # I dati stanno nel progetto privato: si scaricano in ./privato con il codice di accesso DATI_TOKEN
+      - uses: actions/checkout@v4
+        with:
+          repository: jacklamone/intellecta-lead-finder
+          token: ${{ secrets.DATI_TOKEN }}
+          path: privato
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installa
+        run: pip install -r requirements.txt
+
+      - name: Collega i dati del progetto privato
+        run: .github/collega_dati.sh
+
+      - name: Copia su Drive
+        env:
+          DRIVE_UPLOAD_URL: ${{ secrets.DRIVE_UPLOAD_URL }}
+          DRIVE_TOKEN: ${{ secrets.DRIVE_TOKEN }}
+          ZONA: ${{ inputs.zona }}
+        run: |
+          if [ -n "$ZONA" ]; then .github/esegui.sh python carica_drive.py --zona "$ZONA"; else .github/esegui.sh python carica_drive.py; fi
+
+      - name: Ricorda i file caricati
+        if: always()
+        run: .github/salva_dati.sh "File copiati su Drive"

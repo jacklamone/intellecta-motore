@@ -1,0 +1,81 @@
+name: Prepara lettere
+
+on:
+  # Avvio manuale: GitHub → Actions → "Prepara lettere" → Run workflow
+  workflow_dispatch:
+    inputs:
+      zona:
+        description: "Zona (es. LO)"
+        required: true
+      quanti:
+        description: "Quante lettere (i contatti migliori con anteprima)"
+        required: false
+        default: "30"
+      rifai_anteprime:
+        description: "Rifai prima le anteprime di questi contatti con lo stile nuovo (chiaro, logo ridisegnato)"
+        type: boolean
+        required: false
+        default: false
+      rifai_lettere:
+        description: "Rifai anche le lettere già preparate (es. dopo aver completato i dati del mittente)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cerca
+  cancel-in-progress: false
+
+jobs:
+  lettere:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      # I dati stanno nel progetto privato: si scaricano in ./privato con il codice di accesso DATI_TOKEN
+      - uses: actions/checkout@v4
+        with:
+          repository: jacklamone/intellecta-lead-finder
+          token: ${{ secrets.DATI_TOKEN }}
+          path: privato
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installa
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Collega i dati del progetto privato
+        run: .github/collega_dati.sh
+
+      - name: Prepara
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL_PROPOSTE: ${{ vars.OPENAI_MODEL_PROPOSTE }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          DRIVE_UPLOAD_URL: ${{ secrets.DRIVE_UPLOAD_URL }}
+          DRIVE_TOKEN: ${{ secrets.DRIVE_TOKEN }}
+          ZONA: ${{ inputs.zona }}
+          QUANTI: ${{ inputs.quanti }}
+          RIFAI: ${{ inputs.rifai_anteprime }}
+          RIFAI_LETTERE: ${{ inputs.rifai_lettere && '--anche-gia-preparate' || '' }}
+        run: |
+          [ -z "$OPENAI_MODEL_PROPOSTE" ] && unset OPENAI_MODEL_PROPOSTE
+          if [ "$RIFAI" = "true" ]; then
+            .github/esegui.sh python crea_proposte.py --zona "$ZONA" --max "$QUANTI" --rifai
+            .github/esegui.sh python prepara_lettere.py --zona "$ZONA" --quanti "$QUANTI" --anche-gia-preparate
+          else
+            .github/esegui.sh python prepara_lettere.py --zona "$ZONA" --quanti "$QUANTI" $RIFAI_LETTERE
+          fi
+
+      - name: Salva i risultati
+        if: always()
+        run: .github/salva_dati.sh "Lettere"

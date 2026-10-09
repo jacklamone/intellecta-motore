@@ -1,0 +1,138 @@
+# Province da analizzare in automatico, una per riga (sigla), dall'alto verso il basso.
+# Lunedì, mercoledì e venerdì il sistema riprende dalla prima non ancora completata.
+# Spostate in cima le province dove volete lavorare prima. Le righe con # sono ignorate.
+# Si può scrivere anche un singolo comune, così: comune:Abano Terme
+
+# 1) Si parte da qui
+CR
+LO
+BG
+
+# 2) Sardegna, a partire da Sassari
+SS
+CA
+NU
+OR
+SU
+
+# 3) Province vicine a Cremona
+BS
+MN
+PC
+PR
+MI
+PV
+
+# 4) Tutte le altre
+# Veneto
+# PD  (messa da parte: rimettere togliendo il #)
+VE
+VR
+VI
+TV
+RO
+BL
+# Lombardia
+MB
+VA
+CO
+LC
+SO
+# Emilia-Romagna
+BO
+MO
+RE
+FE
+RA
+FC
+RN
+# Friuli-Venezia Giulia
+UD
+PN
+TS
+GO
+# Trentino-Alto Adige
+TN
+BZ
+# Piemonte
+TO
+CN
+AL
+AT
+NO
+VC
+BI
+VB
+# Valle d'Aosta
+AO
+# Liguria
+GE
+SV
+IM
+SP
+# Toscana
+FI
+PI
+LU
+LI
+AR
+SI
+PT
+PO
+GR
+MS
+# Marche
+AN
+PU
+MC
+FM
+AP
+# Umbria
+PG
+TR
+# Lazio
+RM
+LT
+FR
+VT
+RI
+# Abruzzo
+PE
+CH
+TE
+AQ
+# Molise
+CB
+IS
+# Campania
+NA
+SA
+CE
+AV
+BN
+# Puglia
+BA
+LE
+TA
+FG
+BR
+BT
+# Basilicata
+PZ
+MT
+# Calabria
+CS
+RC
+CZ
+KR
+VV
+# Sicilia
+PA
+CT
+ME
+SR
+RG
+TP
+AG
+CL
+EN
