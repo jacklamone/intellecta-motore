@@ -33,7 +33,7 @@ def valuta(d: dict) -> tuple[int, list[str]]:
         voto += 2
     elif foto >= 1:
         voto += 1
-        difetti.append(f"Sulla scheda Google ci sono solo {foto} foto")
+        difetti.append("Sulla scheda Google c'è una sola foto" if foto == 1 else f"Sulla scheda Google ci sono solo {foto} foto")
     else:
         difetti.append("Sulla scheda Google non c'è nessuna foto")
 
