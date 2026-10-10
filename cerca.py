@@ -14,7 +14,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from leadfinder import controlli, fonti, report, valutazione_ai
+from leadfinder import bisogni, controlli, fonti, report, valutazione_ai
 from leadfinder.db import Archivio
 
 RADICE = Path(__file__).parent
@@ -208,10 +208,12 @@ def analizza(archivio: Archivio, zona: str, max_siti: int, max_ai: int, lavorato
             email=r["email"] or ", ".join(e.get("email_sito") or []),
             linkedin=(e.get("social") or {}).get("linkedin", ""),
             social=e.get("social") or {},
+            canali=e.get("canali"),
             screenshot_desktop=relativo(s.get("desktop")) if tenere_foto else None,
             screenshot_mobile=relativo(s.get("mobile")) if tenere_foto else None,
             analizzato_il=dt.date.today().isoformat(),
         )
+        bisogni.aggiorna(archivio, r["dominio"])
         analizzati += 1
 
     # Solo social e siti irraggiungibili non hanno bisogno di screenshot.

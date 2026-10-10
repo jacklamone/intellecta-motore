@@ -144,7 +144,25 @@ def analizza_html(html: str, url_finale: str, secondi: float) -> dict:
         "email_sito": email[:3],
         "titolo": titolo,
         "social": link_social(soup),
+        "canali": canali(html),
     }
+
+
+# Come il cliente può scrivere o prenotare direttamente dal sito.
+RE_CANALI = {
+    "whatsapp": re.compile(r"wa\.me/|api\.whatsapp\.com|web\.whatsapp\.com|whatsapp://|joinchat|click-to-chat|wp-whatsapp|whatsapp-button|wa-widget", re.I),
+    "chat": re.compile(r"tawk\.to|tidio|crisp\.chat|intercom\.io|widget\.intercom|livechatinc|zopim|zendesk|smartsupp|customerchat|chatbot|landbot|botpress|manychat|chatwoot|hubspot.*conversations", re.I),
+    "prenotazione": re.compile(
+        r"octorate|simplebooking|vertical-?booking|bookingexpert|krossbooking|beddy|slope\.it|wubook|bookassist|hotelrunner|"
+        r"cloudbeds|ericsoft|blastness|bedzzle|hotelinone|quandoo|thefork|lafourchette|plateform|treatwell|uala\.|booksy|"
+        r"miodottore|calendly|fresha|prenotazioni-online|prenota-online|book-now|booking-engine|bookingengine|"
+        r"prenota\s+(ora|online|adesso|un tavolo|il tuo)|book\s+now|richiedi\s+(un\s+)?appuntamento", re.I),
+}
+
+
+def canali(html: str) -> dict:
+    """WhatsApp, chat e prenotazione online trovati nella pagina (link, pulsanti o widget)."""
+    return {nome: bool(regex.search(html)) for nome, regex in RE_CANALI.items()}
 
 
 RE_SOCIAL = {

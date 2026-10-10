@@ -1,0 +1,57 @@
+name: Bisogni e canali
+
+on:
+  # Avvio manuale: ricontrolla i siti già analizzati (WhatsApp, chat, prenotazione, social) e ricalcola
+  # i bisogni di ogni attività. Gratis: non usa Google né OpenAI.
+  workflow_dispatch:
+    inputs:
+      zona:
+        description: "Sigla della zona (es. SS). Vuoto = tutte"
+        required: false
+        default: ""
+      quanti:
+        description: "Quanti siti ricontrollare al massimo"
+        required: false
+        default: "4000"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cerca
+  cancel-in-progress: false
+
+jobs:
+  bisogni:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      # I dati stanno nel progetto privato: si scaricano in ./privato con il codice di accesso DATI_TOKEN
+      - uses: actions/checkout@v4
+        with:
+          repository: jacklamone/intellecta-lead-finder
+          token: ${{ secrets.DATI_TOKEN }}
+          path: privato
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installa
+        run: pip install -r requirements.txt
+
+      - name: Collega i dati del progetto privato
+        run: .github/collega_dati.sh
+
+      - name: Ricontrolla i siti e calcola i bisogni
+        env:
+          ZONA: ${{ inputs.zona }}
+          QUANTI: ${{ inputs.quanti }}
+        run: .github/esegui.sh python rileva_canali.py --zona "$ZONA" --max "$QUANTI"
+
+      - name: Salva i risultati
+        if: always()
+        run: .github/salva_dati.sh "Bisogni e canali"

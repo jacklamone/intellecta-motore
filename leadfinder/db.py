@@ -59,6 +59,8 @@ COLONNE_NUOVE = {
     "pagina": "TEXT", "indirizzo_postale": "TEXT", "lettera_preparata": "TEXT", "non_contattare": "INTEGER DEFAULT 0",
     # Scheda Google Maps: voto 0-10 (10 = curata), difetti in chiaro, data del controllo
     "scheda_voto": "INTEGER", "scheda_difetti": "TEXT", "scheda_controllata": "TEXT",
+    # Canali di contatto trovati nel sito e bisogni calcolati (sito, WhatsApp, social, Google)
+    "canali": "TEXT", "bisogni": "TEXT", "pacchetto": "TEXT",
 }
 
 # Campi dell'analisi da azzerare quando il sito cambia indirizzo e va rianalizzato.
@@ -203,7 +205,7 @@ class Archivio:
         ).fetchone()[0]
 
     def aggiorna(self, dominio: str, **campi) -> None:
-        for k in ("problemi", "valutazione_ai", "social", "proposta"):
+        for k in ("problemi", "valutazione_ai", "social", "proposta", "canali", "bisogni"):
             if k in campi and not isinstance(campi[k], str) and campi[k] is not None:
                 campi[k] = json.dumps(campi[k], ensure_ascii=False)
         assegnazioni = ", ".join(f"{k} = ?" for k in campi)

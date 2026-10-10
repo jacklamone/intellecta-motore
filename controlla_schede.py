@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from leadfinder import google_maps as gmaps
-from leadfinder import scheda_google
+from leadfinder import bisogni, scheda_google
 from leadfinder.db import Archivio
 
 RADICE = Path(__file__).parent
@@ -57,6 +57,7 @@ def main() -> int:
         archivio.conn.execute(
             "UPDATE siti SET scheda_voto = ?, scheda_difetti = ?, scheda_controllata = ?, priorita = MIN(100, priorita + ?) "
             "WHERE dominio = ?", [voto, json.dumps(difetti, ensure_ascii=False), oggi, bonus, r["dominio"]])
+        bisogni.aggiorna(archivio, r["dominio"])
         log(f"  {r['nome']}: scheda {voto}/10 {'; '.join(difetti)}")
         archivio.conn.commit()
     archivio.conn.commit()
