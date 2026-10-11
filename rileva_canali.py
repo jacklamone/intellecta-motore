@@ -65,6 +65,7 @@ def main() -> int:
         log(f"Canali: {fatti} siti ricontrollati; WhatsApp {trovati['whatsapp']}, chat {trovati['chat']}, "
             f"prenotazione online {trovati['prenotazione']}")
 
+    log(f"Bisogni: esclusi {bisogni.escludi_enti(archivio, args.zona.upper())} enti pubblici")
     domini = [d for (d,) in archivio.conn.execute(
         f"SELECT dominio FROM siti WHERE stato = 'analizzato' {filtro}", valori)]
     for d in domini:

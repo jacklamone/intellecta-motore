@@ -5,6 +5,7 @@ I motivi dicono cosa abbiamo trovato ("non abbiamo trovato…"), mai cose che no
 """
 
 import json
+import re
 
 ALTO, MEDIO, BASSO = "alto", "medio", "basso"
 ORDINE = ["sito", "whatsapp", "google", "social"]
@@ -102,3 +103,31 @@ def aggiorna(archivio, dominio: str) -> None:
         return
     b = calcola(r)
     archivio.aggiorna(dominio, bisogni=b, pacchetto=pacchetto(b))
+
+
+# Enti pubblici e servizi sanitari pubblici: non sono clienti, si escludono dall'archivio.
+# Regole strette: le categorie di Google sono spesso sbagliate (cliniche private come "Ufficio statale").
+CATEGORIE_ENTI = ("blood donation", "municipio", "stazione di polizia", "caserma", "scuola pubblica")
+PAROLE_ENTI = ("guardia medica", "comune di ", "azienda ospedaliera", "azienda sanitaria", "carabinieri", "questura",
+               "prefettura", "polizia locale", "polizia municipale", "protezione civile", "istituto comprensivo",
+               "croce rossa", "parrocchia", "diocesi", "donatori di sangue", "distretto veterinario")
+RE_DOMINI_ENTI = re.compile(r"(^|\.)(asl|ats|aou|asst|ausl|usl)[-a-z]*\.it$|\.gov\.it$|\.edu\.it$|(^|\.)comune\.|"
+                            r"(^|\.)regione\.|sardegnasalute\.it|carabinieri\.it|poliziadistato\.it")
+
+
+def ente_pubblico(r) -> bool:
+    get = (lambda k: r[k]) if not isinstance(r, dict) else r.get
+    categoria, nome = (get("categoria") or "").lower(), f" {(get('nome') or '').lower()} "
+    dominio = (get("dominio") or "").lower()
+    return (any(c in categoria for c in CATEGORIE_ENTI) or any(p in nome for p in PAROLE_ENTI)
+            or bool(RE_DOMINI_ENTI.search(dominio)))
+
+
+def escludi_enti(archivio, zona: str = "") -> int:
+    filtro, valori = ("AND zona = ?", [zona]) if zona else ("", [])
+    righe = archivio.conn.execute(f"SELECT * FROM siti WHERE stato != 'esclusa' {filtro}", valori).fetchall()
+    enti = [r["dominio"] for r in righe if ente_pubblico(r)]
+    for d in enti:
+        archivio.conn.execute("UPDATE siti SET stato = 'esclusa' WHERE dominio = ?", [d])
+    archivio.conn.commit()
+    return len(enti)

@@ -7,7 +7,7 @@ cd "$GITHUB_WORKSPACE"
 registro="privato/registri/$(date -u +%Y-%m-%d)-${GITHUB_WORKFLOW// /-}-${GITHUB_RUN_ID}.log"
 "$@" > "$registro" 2>&1
 esito=$?
-grep -E "Schede Google: [0-9]|Canali: [0-9]|Bisogni: ricalcolati|Google Maps: [0-9]|Google Maps: verifico|Google Drive: [0-9]|Consumo OpenAI|restano [0-9]+ siti|Trovate [0-9]+ PMI" "$registro" \
+grep -E "Schede Google: [0-9]|Canali: [0-9]|Bisogni: ricalcolati|Bisogni: esclusi|Google Maps: [0-9]|Google Maps: verifico|Google Drive: [0-9]|Consumo OpenAI|restano [0-9]+ siti|Trovate [0-9]+ PMI" "$registro" \
   | sed -E 's/Report: [^ ]+ — //' || true
 if [ $esito -ne 0 ]; then
   echo "::error::Il giro si è fermato (codice $esito). Tipo di errore:"
